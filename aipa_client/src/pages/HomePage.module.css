@@ -1,0 +1,298 @@
+/* HomePage.module.css */
+
+/* === Keyframes & Nền chung === */
+@keyframes slow-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(0.98); }
+}
+
+@keyframes loading-dots {
+    0%, 20%, 80%, 100% { transform: scale(1); }
+    40% { transform: scale(1.5); }
+    60% { transform: scale(0.8); }
+}
+
+.homePageContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #161b22; /* Nền tối */
+    color: #c9d1d9; /* Chữ sáng */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    overflow: hidden;
+}
+
+/* === Header và Popover === */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: #0d1117; 
+    border-bottom: 1px solid #30363d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.headerTitle {
+    font-size: 20px;
+    font-weight: bold;
+    color: #00bcd4;
+    letter-spacing: 0.05em;
+}
+
+.profileButton {
+    background: #22272e;
+    color: #00bcd4;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.profileButton:hover {
+    background-color: #30363d;
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
+}
+
+/* Popover Cài đặt */
+.settingsPopover {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 250px;
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    padding: 12px;
+    z-index: 150;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.settingsPopover.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.popoverItem {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.popoverItem:hover {
+    background-color: #22272e;
+}
+
+.popoverItem.logout {
+    color: #ef4444; /* Đỏ cho Logout */
+}
+
+/* === Main Content Area (Chia 2 cột) === */
+.mainContent {
+    flex-grow: 1;
+    display: flex;
+    overflow: hidden;
+    padding-bottom: 16px; 
+}
+
+/* Cột Bot (Model 2D) */
+.botArea {
+    width: 30%;
+    max-width: 300px;
+    padding: 24px;
+    border-right: 1px solid #30363d;
+    background-color: #161b22;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.botImage {
+    /* Khu vực hiển thị Model 2D */
+    width: 100%;
+    max-width: 250px;
+    height: 250px;
+    background: #0d1117; 
+    border: 2px solid #00bcd4;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
+    animation: slow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    overflow: hidden;
+}
+
+.modelPlaceholder {
+    font-size: 14px;
+    color: #9ca3af;
+    padding: 10px;
+    text-align: center;
+}
+
+.botInfo {
+    margin-top: 10px;
+}
+
+.botName {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+}
+
+.botStatus {
+    font-size: 12px;
+    color: #48bb78;
+    transition: color 0.3s;
+}
+
+/* Cột Chat */
+.chatArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px); 
+}
+
+/* Khung tin nhắn */
+.messageBubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.userMessage {
+    align-self: flex-end;
+    margin-left: auto;
+    background-color: #00bcd4;
+    color: black;
+    border-bottom-right-radius: 4px;
+}
+
+.botMessage {
+    align-self: flex-start;
+    background-color: #22272e;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-bottom-left-radius: 4px;
+}
+
+.loadingDots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 15px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background-color: #00bcd4;
+    border-radius: 50%;
+    animation: loading-dots 1.5s infinite;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* === Footer Input Area === */
+.footer {
+    padding: 16px 24px;
+    background-color: #0d1117;
+    border-top: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+    z-index: 90;
+}
+
+.chatInput {
+    flex-grow: 1;
+    padding: 12px 16px;
+    background-color: #22272e;
+    border: 1px solid #30363d;
+    border-radius: 24px;
+    color: white;
+    font-size: 16px;
+    transition: all 0.3s;
+    outline: none;
+}
+
+.chatInput:focus {
+    border-color: #00bcd4;
+    box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3);
+}
+
+/* Button Micro Lớn (Ưu tiên) */
+.micButton {
+    background-color: #48bb78; /* Màu xanh lá cho Micro */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.micButton.active {
+    background-color: #ef4444; /* Màu đỏ khi đang thu âm */
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+    animation: slow-pulse 1s infinite;
+}
+
+.micButton:hover {
+    background-color: #38a169;
+}
+
+.sendButton {
+    /* Style cho Send Button (Khi có text) */
+    background-color: #00bcd4;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sendButton:disabled, .micButton:disabled {
+    background-color: #30363d;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
