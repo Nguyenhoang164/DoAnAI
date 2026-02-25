@@ -1,103 +1,161 @@
 package com.example.aipa.service;
 
+import com.example.aipa.dto.user.AdminBanLogView;
+import com.example.aipa.dto.user.UpdateProfileRequest;
+import com.example.aipa.model.User;
+import com.example.aipa.model.UserBanLog;
+import com.example.aipa.repository.IUserRepository;
+import com.example.aipa.repository.UserBanLogRepository;
+import com.example.aipa.service.impl.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.persistence.criteria.CriteriaBuilder.In;
-
-import com.example.aipa.repository.IUserRepository;
-import com.example.aipa.service.impl.InnerIUserService;
-import com.example.aipa.model.User;
 import java.util.List;
 import java.util.Optional;
 
-//** Lớp dịch vụ để xử lý logic liên quan đến user */
-//** Cung cấp các phương thức để đăng ký, đăng nhập, cập nhật thông tin
-//** và các thao tác khác liên quan đến user */
 @Service
-public class UserService implements InnerIUserService {
+public class UserService implements IUserService {
     @Autowired
     private IUserRepository userRepository;
-   
-    // Tìm user theo username
-    // 
+    @Autowired
+    private UserBanLogRepository userBanLogRepository;
+
     @Override
     public Optional<User> findByUsername(String username) {
-        if(username == null || username.isEmpty()) {
+        if (username == null || username.isBlank()) {
             return Optional.empty();
         }
         return userRepository.findByUsername(username);
     }
-    
-    // Tìm user theo email
+
     @Override
     public Optional<User> findByEmail(String email) {
-        if(email == null || email.isEmpty()) {
+        if (email == null || email.isBlank()) {
             return Optional.empty();
-        }else if(!email.contains("@") && !email.contains(".")) {
-            return Optional.empty();
-        } else{
-            return userRepository.findByEmail(email);
         }
+        return userRepository.findByEmail(email);
     }
-    // Lấy tất cả user
+
     @Override
     public List<User> findAll() {
         return userRepository.findAll();
     }
 
-    // Xoá user theo ID
     @Override
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }
 
-    // Xoá tất cả user
     @Override
     public void deleteAll() {
         userRepository.deleteAll();
     }
 
-    // Tìm thông tin user theo faceEmbeddingsJson
-    // Lấy thông tin user dựa trên dữ liệu vector đặc trưng khuôn mặt
     @Override
     public Optional<User> findByFaceEmbeddingsJson(String faceEmbeddingsJson) {
-     Optional <User> userOpt = userRepository.findByFaceEmbeddingsJson(faceEmbeddingsJson);
-      if (userOpt == null) {
-        return Optional.empty();
-      } else{
-        return userOpt;
-      }
-    }
-    // Cập nhật faceEmbeddingsJson cho user theo ID
-    @Override
-    public Optional<User> updateFaceEmbeddingsJsonById(Long id, String faceEmbeddingsJson) {
-        if (id == null || id <= 0 || faceEmbeddingsJson == null || faceEmbeddingsJson.isEmpty()) {
+        if (faceEmbeddingsJson == null || faceEmbeddingsJson.isBlank()) {
             return Optional.empty();
         }
-        return userRepository.updateFaceEmbeddingsJsonById(id, faceEmbeddingsJson);
+        return userRepository.findByFaceEmbeddingsJson(faceEmbeddingsJson);
     }
-     
-    // Cập nhật thông tin user
+
     @Override
     public Optional<User> updateUser(User user) {
-        Optional<User> exitUserOpt = userRepository.findById(user.getId());
-        if(user.getPassword() == exitUserOpt.get().getPassword()) {
+        if (user == null || user.getId() == null) {
             return Optional.empty();
-        } else {
-            return userRepository.updateAndFlushOptional(user);
         }
+
+        return userRepository.findById(user.getId())
+                .map(existingUser -> userRepository.save(user));
     }
 
-    // Tạo mới user
-    // cần thêm kiểm tra hợp lệ dữ liệu
-    public Optional<User> RegisterUser(User user) {
-        return userRepository.createUser(user);
+    @Override
+    public User updateOwnProfile(String currentUsername, UpdateProfileRequest request) {
+        if (currentUsername == null || currentUsername.isBlank()) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim().toLowerCase();
+
+        userRepository.findByUsername(username)
+                .filter(existing -> !existing.getId().equals(user.getId()))
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException("Username already exists");
+                });
+
+        userRepository.findByEmail(email)
+                .filter(existing -> !existing.getId().equals(user.getId()))
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException("Email already exists");
+                });
+
+        user.setUsername(username);
+        user.setEmail(email);
+        return userRepository.save(user);
     }
 
-    // Đăng nhập user
-    public Optional<User> LoginUser(String username, String password) {
+    public Optional<User> registerUser(User user) {
+        if (user == null) {
+            return Optional.empty();
+        }
+        return Optional.of(userRepository.save(user));
+    }
+
+    public Optional<User> loginUser(String username, String password) {
+        if (username == null || password == null) {
+            return Optional.empty();
+        }
         return userRepository.findByUsername(username)
                 .filter(user -> user.getPassword().equals(password));
-    }             
+    }
+
+    public List<User> getAllUsersForAdmin() {
+        return userRepository.findAll();
+    }
+
+    public void banUser(Long userId, String adminUsername, String reason) {
+        if (adminUsername == null || adminUsername.isBlank()) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getRole() == 1) {
+            throw new IllegalArgumentException("Cannot ban admin account");
+        }
+
+        if (!user.isActive()) {
+            throw new IllegalArgumentException("User is already banned");
+        }
+
+        user.setActive(false);
+        userRepository.save(user);
+
+        UserBanLog banLog = new UserBanLog();
+        banLog.setUserId(user.getId());
+        banLog.setUsername(user.getUsername());
+        banLog.setEmail(user.getEmail());
+        banLog.setReason(reason.trim());
+        banLog.setBannedBy(adminUsername);
+        userBanLogRepository.save(banLog);
+    }
+
+    public List<AdminBanLogView> getBanLogsForAdmin() {
+        return userBanLogRepository.findAllByOrderByBannedAtDesc().stream()
+                .map(log -> new AdminBanLogView(
+                        log.getId(),
+                        log.getUserId(),
+                        log.getUsername(),
+                        log.getEmail(),
+                        log.getReason(),
+                        log.getBannedBy(),
+                        log.getBannedAt()
+                ))
+                .toList();
+    }
 }
