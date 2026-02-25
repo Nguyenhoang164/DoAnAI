@@ -1,4 +1,4 @@
-const AUTH_STORAGE_KEY = 'aipa_auth';
+const AUTH_STORAGE_KEY = 'aipa_controll';
 
 export function getStoredAuth() {
   const raw = localStorage.getItem(AUTH_STORAGE_KEY);
